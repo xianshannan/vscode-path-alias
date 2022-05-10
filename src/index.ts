@@ -4,7 +4,7 @@ import {
   languages,
   TextDocument,
   window,
-  Uri
+  Uri,
 } from 'vscode';
 import * as fs from 'fs';
 
@@ -21,16 +21,16 @@ import { PathAliasCodeActionProvider } from './codeAction';
 import { getAliasConfig } from './util/config';
 import {
   PathAliasSignatureHelpProvider,
-  SignatureHelpCollectItem
+  SignatureHelpCollectItem,
 } from './signature';
 import { Nullable } from './util/types';
 import {
   IFunctionSignature,
-  getFunctionSignatureFromFiles
+  getFunctionSignatureFromFiles,
 } from './util/getSignatureFromFile';
 
 export const eventBus = new EventEmitter();
-const isWin = process.platform === "win32";
+const isWin = process.platform === 'win32';
 export class PathAlias {
   private _ctx: ExtensionContext;
   private _statMap: AliasStatTree[] = [{}];
@@ -48,20 +48,20 @@ export class PathAlias {
   constructor(ctx: ExtensionContext) {
     // console.time('init');
     this._ctx = ctx;
-    
+
     this.init();
 
     if (workspace.workspaceFolders && workspace.getWorkspaceFolder.length) {
-      workspace.workspaceFolders.forEach(ws => {
+      workspace.workspaceFolders.forEach((ws) => {
         generateWatcher(ws.uri.fsPath);
       });
     }
-    workspace.onDidChangeConfiguration(e => {
+    workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('pathAlias.aliasMap')) {
         this.updateStatInfo();
       }
     });
-    window.onDidChangeActiveTextEditor(event => {
+    window.onDidChangeActiveTextEditor((event) => {
       if (event) {
         this.recollectDependencies(event.document);
       }
@@ -70,9 +70,11 @@ export class PathAlias {
       this.updateStatInfo();
     }, 1000);
     eventBus
-      .on('file-change', path => {
+      .on('file-change', (path) => {
         const normalizedPath = isWin ? path.replace(/\\/g, '/') : path;
-        const ws = workspace.getWorkspaceFolder(Uri.parse(`file://${normalizedPath}`));
+        const ws = workspace.getWorkspaceFolder(
+          Uri.parse(`file://${normalizedPath}`)
+        );
         if (!ws) {
           return;
         }
@@ -101,12 +103,15 @@ export class PathAlias {
     while ((execResult = importReg.exec(content))) {
       let [, , , pathAlias] = execResult;
       pathAlias = pathAlias.slice(1, -1);
-      const mostLike = mostLikeAlias(this._aliasList[index], pathAlias.split('/')[0]);
+      const mostLike = mostLikeAlias(
+        this._aliasList[index],
+        pathAlias.split('/')[0]
+      );
       if (mostLike) {
         this._importAliasPathList.push(pathAlias);
         const pathList = [
           this._statMap[index][mostLike]['absolutePath'],
-          ...pathAlias.split('/').slice(1)
+          ...pathAlias.split('/').slice(1),
         ];
         let absolutePath = path.join(...pathList);
         let extname = path.extname(absolutePath);
@@ -139,12 +144,9 @@ export class PathAlias {
       this._importAliasPathList
     );
     this._signature.setFunctionTokenList(
-      this._functionTokenList.reduce(
-        (pre, cur) => {
-          return pre.concat(cur.functionTokenList);
-        },
-        <IFunctionSignature[]>[]
-      )
+      this._functionTokenList.reduce((pre, cur) => {
+        return pre.concat(cur.functionTokenList);
+      }, <IFunctionSignature[]>[])
     );
   }
 
@@ -162,7 +164,10 @@ export class PathAlias {
       languages.registerSignatureHelpProvider(
         [
           { language: 'javascript', scheme: 'file' },
-          { language: 'vue', scheme: 'file' }
+          { language: 'javascriptreact', scheme: 'file' },
+          { language: 'typescript', scheme: 'file' },
+          { language: 'typescriptreact', scheme: 'file' },
+          { language: 'vue', scheme: 'file' },
         ],
         this._signature,
         ',',
@@ -180,15 +185,15 @@ export class PathAlias {
 
   private initStatInfo() {
     if (workspace.workspaceFolders && workspace.workspaceFolders.length) {
-      this._statMap = workspace.workspaceFolders.map(_ => ({}));
+      this._statMap = workspace.workspaceFolders.map((_) => ({}));
       workspace.workspaceFolders.forEach((ws, index) => {
         this._aliasMap[index] =
           workspace.getConfiguration('pathAlias').get('aliasMap') || {};
         this._aliasMap[index] = {
           ...this._aliasMap[index],
-          ...getAliasConfig(ws.uri.fsPath || '')
+          ...getAliasConfig(ws.uri.fsPath || ''),
         };
-        Object.keys(this._aliasMap[index]).forEach(alias => {
+        Object.keys(this._aliasMap[index]).forEach((alias) => {
           const realPath = this._aliasMap[index][alias].replace(
             '${cwd}',
             ws.uri.fsPath || ''
@@ -218,7 +223,10 @@ export class PathAlias {
       languages.registerCodeActionsProvider(
         [
           { language: 'javascript', scheme: 'file' },
-          { language: 'vue', scheme: 'file' }
+          { language: 'javascriptreact', scheme: 'file' },
+          { language: 'typescript', scheme: 'file' },
+          { language: 'typescriptreact', scheme: 'file' },
+          { language: 'vue', scheme: 'file' },
         ],
         this._codeAction
       )
@@ -231,7 +239,10 @@ export class PathAlias {
       languages.registerCompletionItemProvider(
         [
           { language: 'javascript', scheme: 'file' },
-          { language: 'vue', scheme: 'file' }
+          { language: 'javascriptreact', scheme: 'file' },
+          { language: 'typescript', scheme: 'file' },
+          { language: 'typescriptreact', scheme: 'file' },
+          { language: 'vue', scheme: 'file' },
         ],
         this._completion,
         '/',
@@ -241,7 +252,10 @@ export class PathAlias {
       languages.registerCompletionItemProvider(
         [
           { language: 'javascript', scheme: 'file' },
-          { language: 'vue', scheme: 'file' }
+          { language: 'javascriptreact', scheme: 'file' },
+          { language: 'typescript', scheme: 'file' },
+          { language: 'typescriptreact', scheme: 'file' },
+          { language: 'vue', scheme: 'file' },
         ],
         this._importCompletion
       )
@@ -258,7 +272,10 @@ export class PathAlias {
       languages.registerDefinitionProvider(
         [
           { language: 'javascript', scheme: 'file' },
-          { language: 'vue', scheme: 'file' }
+          { language: 'javascriptreact', scheme: 'file' },
+          { language: 'typescript', scheme: 'file' },
+          { language: 'typescriptreact', scheme: 'file' },
+          { language: 'vue', scheme: 'file' },
         ],
         this._definition
       ),
@@ -272,13 +289,13 @@ export class PathAlias {
 
 function aliasStatInfo(alias: string, realPath: string): StatInfo {
   if (isWin) {
-    realPath = realPath.replace(/\//g, '\\')
+    realPath = realPath.replace(/\//g, '\\');
   }
   const stat: StatInfo = {
     name: alias,
     type: 'directory',
     absolutePath: realPath,
-    children: Object.create(null)
+    children: Object.create(null),
   };
   stat['children'] = readdirSync(realPath).reduce((pre, currentPath) => {
     if (currentPath !== 'node_modules') {
@@ -295,7 +312,7 @@ function getStatInfo(name: string, absolutePath: string): StatInfo {
     name,
     absolutePath,
     type: 'file',
-    children: Object.create(null)
+    children: Object.create(null),
   };
   if (statSync(absolutePath).isDirectory()) {
     resStatInfo['children'] = readdirSync(absolutePath).reduce(
